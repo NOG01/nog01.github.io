@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ping Pong</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #0a0a0f;
+    overflow: hidden;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  #root {
+    width: 100vw; height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0f;
+  }
+  #topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 900px;
+    padding: 0 4px;
+    margin-bottom: 14px;
+  }
+  #scoreboard {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    color: #e0e0e0;
+    letter-spacing: 2px;
+    flex: 1;
+    justify-content: center;
+  }
+  .name { color: #666; font-size: 12px; text-align: center; }
+  .score { font-size: 42px; color: #fff; line-height: 1; text-align: center; }
+  .sep { color: #333; font-size: 32px; }
+  #pause-btn {
+    background: none;
+    border: 1px solid #444;
+    color: #888;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 6px 14px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  #pause-btn:hover { border-color: #7af; color: #7af; }
+
+  #canvas-wrap { position: relative; }
+  canvas { display: block; border-radius: 4px; border: 1px solid #1a1a2a; }
+  #overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.88);
+    border-radius: 4px;
+    color: #fff; gap: 16px;
+  }
+  #overlay h2 { font-size: 22px; letter-spacing: 4px; color: #7af; }
+  .msg { font-size: 13px; color: #888; letter-spacing: 1px; }
+  .winner { font-size: 17px; color: #ffd080; letter-spacing: 2px; }
+  .obtn {
+    background: none; border: 1px solid #7af;
+    color: #7af; font-family: 'Share Tech Mono', monospace;
+    font-size: 13px; letter-spacing: 2px;
+    padding: 9px 28px; cursor: pointer; border-radius: 2px;
+    transition: background 0.15s;
+  }
+  .obtn:hover { background: rgba(119,170,255,0.12); }
+  .hint { font-size: 11px; color: #444; letter-spacing: 1px; }
+  .diff-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #222;
+    border-radius: 4px;
+    padding: 16px 28px;
+  }
+  .diff-label { font-size: 11px; color: #555; letter-spacing: 2px; }
+  .diff-buttons { display: flex; gap: 10px; }
+  .diff-opt {
+    background: none;
+    border: 1px solid #333;
+    color: #666;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 6px 16px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .diff-opt:hover { border-color: #7af; color: #7af; }
+  .diff-opt.active { color: #0a0a0f; }
+  .diff-hint { font-size: 11px; color: #444; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<div id="root">
+  <div id="topbar">
+    <div style="width:90px"></div>
+    <div id="scoreboard">
+      <div><div class="name">VOCÊ</div><div class="score" id="score-p">0</div></div>
+      <div class="sep">:</div>
+      <div><div class="name">PC</div><div class="score" id="score-ai">0</div></div>
+    </div>
+    <button id="pause-btn">⚙ CONFIG</button>
+  </div>
+  <div id="canvas-wrap">
+    <canvas id="c"></canvas>
+    <div id="overlay" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var canvas = document.getElementById('c');
+  var ctx = canvas.getContext('2d');
+  var overlay = document.getElementById('overlay');
+  var scoreP = document.getElementById('score-p');
+  var scoreAI = document.getElementById('score-ai');
+  var pauseBtn = document.getElementById('pause-btn');
+
+  var PAD_W = 12, BALL_R = 8;
+  var WIN_SCORE = 12;
+  var WIN_DIFF = 3;
+
+  var DIFFICULTIES = [
+    { name: 'FACIL',   color: '#44cc88', base: 9,   max: 18, aiBase: 0.09,  aiMult: 0.035 },
+    { name: 'MEDIO',   color: '#7af',    base: 13,  max: 24, aiBase: 0.13,  aiMult: 0.05  },
+    { name: 'DIFICIL', color: '#ff6644', base: 19,  max: 34, aiBase: 0.18,  aiMult: 0.07  }
+  ];
+  var diffIndex = 1;
+
+  var W, H, PAD_H;
+  var state = 'idle';
+  var scorePlayer = 0, scorePC = 0;
+  var mouseY;
+  var ball, padPlayer, padPC, speedMult;
+  var raf;
+
+  function diff() { return DIFFICULTIES[diffIndex]; }
+
+  function resize() {
+    var avW = window.innerWidth;
+    var avH = window.innerHeight;
+    var topH = 80;
+    var maxW = Math.min(avW - 32, 900);
+    var maxH = avH - topH - 20;
+    var aspect = 16 / 10;
+    var cw = maxW, ch = cw / aspect;
+    if (ch > maxH) { ch = maxH; cw = ch * aspect; }
+    W = Math.floor(cw); H = Math.floor(ch);
+    PAD_H = Math.round(H * 0.18);
+    canvas.width = W; canvas.height = H;
+    if (mouseY === undefined) mouseY = H / 2;
+  }
+
+  function resetBall(dir) {
+    var d = diff();
+    var angle = Math.random() * 0.6 - 0.3;
+    var speed = d.base * speedMult;
+    var dx = dir || (Math.random() > 0.5 ? 1 : -1);
+    ball = {
+      x: W / 2, y: H / 2,
+      vx: Math.cos(angle) * speed * dx,
+      vy: Math.sin(angle) * speed
+    };
+    if (Math.abs(ball.vx) < 2) ball.vx = 2 * dx;
+  }
+
+  function checkWin() {
+    var gap = Math.abs(scorePlayer - scorePC);
+    var pWin = scorePlayer >= WIN_SCORE || (scorePlayer >= 1 && scorePlayer > scorePC && gap >= WIN_DIFF);
+    var aiWin = scorePC >= WIN_SCORE || (scorePC >= 1 && scorePC > scorePlayer && gap >= WIN_DIFF);
+    if (pWin) { state = 'over'; showGameOver('VOCE VENCEU!', 'PARABENS!', 'JOGAR DE NOVO'); return true; }
+    if (aiWin) { state = 'over'; showGameOver('PC VENCEU', 'TENTE NOVAMENTE', 'REVANCHE'); return true; }
+    return false;
+  }
+
+  function startGame() {
+    scorePlayer = 0; scorePC = 0;
+    scoreP.textContent = 0; scoreAI.textContent = 0;
+    speedMult = 1;
+    padPlayer = { y: H / 2 - PAD_H / 2 };
+    padPC    = { y: H / 2 - PAD_H / 2 };
+    overlay.style.display = 'none';
+    pauseBtn.textContent = '❙❙ PAUSA';
+    resetBall(1);
+    state = 'playing';
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  }
+
+  var lastGameOverArgs = null;
+
+  function showStartOverlay() {
+    overlay.innerHTML = '';
+    var h = document.createElement('h2'); h.textContent = 'PING PONG'; overlay.appendChild(h);
+    var m = document.createElement('div'); m.className = 'msg'; m.textContent = 'PRIMEIRO A 12 PONTOS OU VANTAGEM DE 3 VENCE'; overlay.appendChild(m);
+    var b = document.createElement('button'); b.className = 'obtn'; b.id = 'start-btn'; b.textContent = 'JOGAR'; b.onclick = startGame; overlay.appendChild(b);
+    var hint = document.createElement('div'); hint.className = 'hint'; hint.textContent = 'mova o mouse sobre o campo para controlar'; overlay.appendChild(hint);
+    overlay.style.display = 'flex';
+  }
+
+  function showGameOver(title, sub, btnText) {
+    lastGameOverArgs = [title, sub, btnText];
+    pauseBtn.textContent = '⚙ CONFIG';
+    overlay.innerHTML = '';
+    var w = document.createElement('div'); w.className = 'winner'; w.textContent = title; overlay.appendChild(w);
+    var s = document.createElement('div'); s.className = 'msg'; s.textContent = sub; overlay.appendChild(s);
+    var b = document.createElement('button'); b.className = 'obtn'; b.textContent = btnText; b.onclick = startGame; overlay.appendChild(b);
+    overlay.style.display = 'flex';
+  }
+
+  function buildDiffPanel(onClose, closeLabel) {
+    overlay.innerHTML = '';
+
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:18px;letter-spacing:4px;color:#7af;';
+    title.textContent = state === 'paused' ? 'PAUSADO' : 'CONFIGURACOES';
+    overlay.appendChild(title);
+
+    var panel = document.createElement('div');
+    panel.className = 'diff-panel';
+
+    var lbl = document.createElement('div'); lbl.className = 'diff-label'; lbl.textContent = 'DIFICULDADE';
+    panel.appendChild(lbl);
+
+    var btns = document.createElement('div'); btns.className = 'diff-buttons';
+
+    DIFFICULTIES.forEach(function(d, i) {
+      var btn = document.createElement('button');
+      btn.className = 'diff-opt' + (i === diffIndex ? ' active' : '');
+      btn.textContent = d.name;
+      btn.style.borderColor = d.color;
+      if (i === diffIndex) { btn.style.background = d.color; btn.style.color = '#0a0a0f'; }
+      else { btn.style.color = d.color; }
+      btn.onclick = function() {
+        diffIndex = i;
+        btns.querySelectorAll('.diff-opt').forEach(function(b, j) {
+          var dj = DIFFICULTIES[j];
+          if (j === i) {
+            b.className = 'diff-opt active';
+            b.style.background = dj.color;
+            b.style.color = '#0a0a0f';
+          } else {
+            b.className = 'diff-opt';
+            b.style.background = 'none';
+            b.style.color = dj.color;
+          }
+          b.style.borderColor = dj.color;
+        });
+      };
+      btns.appendChild(btn);
+    });
+
+    panel.appendChild(btns);
+
+    var hint = document.createElement('div'); hint.className = 'diff-hint';
+    hint.textContent = 'altera a velocidade da bola e da IA';
+    panel.appendChild(hint);
+    overlay.appendChild(panel);
+
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'obtn';
+    closeBtn.textContent = closeLabel;
+    closeBtn.onclick = onClose;
+    overlay.appendChild(closeBtn);
+
+    overlay.style.display = 'flex';
+  }
+
+  function showPauseOverlay() {
+    buildDiffPanel(resumeGame, '\u25B6 CONTINUAR');
+  }
+
+  function showConfigOverlay() {
+    var restoreFn;
+    if (state === 'idle') {
+      restoreFn = showStartOverlay;
+    } else if (state === 'over') {
+      restoreFn = function() {
+        if (lastGameOverArgs) showGameOver(lastGameOverArgs[0], lastGameOverArgs[1], lastGameOverArgs[2]);
+      };
+    } else {
+      restoreFn = function() { overlay.style.display = 'none'; };
+    }
+    buildDiffPanel(function() {
+      overlay.innerHTML = '';
+      restoreFn();
+    }, '\u2190 VOLTAR');
+  }
+
+  function pauseGame() {
+    if (state !== 'playing') return;
+    state = 'paused';
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    pauseBtn.textContent = '\u25B6 CONTINUAR';
+    showPauseOverlay();
+  }
+
+  function resumeGame() {
+    if (state !== 'paused') return;
+    state = 'playing';
+    overlay.style.display = 'none';
+    pauseBtn.textContent = '❙❙ PAUSA';
+    raf = requestAnimationFrame(loop);
+  }
+
+  pauseBtn.onclick = function() {
+    if (state === 'playing') pauseGame();
+    else if (state === 'paused') resumeGame();
+    else showConfigOverlay();
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.code === 'Escape' || e.code === 'KeyP') {
+      if (state === 'playing') pauseGame();
+      else if (state === 'paused') resumeGame();
+    }
+  });
+
+  canvas.addEventListener('mousemove', function(e) {
+    var rect = canvas.getBoundingClientRect();
+    mouseY = e.clientY - rect.top;
+  });
+  canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    var rect = canvas.getBoundingClientRect();
+    mouseY = e.touches[0].clientY - rect.top;
+  }, { passive: false });
+
+  window.addEventListener('resize', function() {
+    resize();
+    if (state !== 'playing') draw();
+  });
+
+  function clampPad(y) { return Math.max(0, Math.min(H - PAD_H, y)); }
+
+  function aiMove() {
+    var d = diff();
+    var center = padPC.y + PAD_H / 2;
+    var delta = ball.y - center;
+    var skill = Math.min(d.aiBase + speedMult * d.aiMult, d.aiBase * 2.2);
+    padPC.y = clampPad(padPC.y + delta * skill * (1 + Math.random() * 0.06));
+  }
+
+  function boostSpeed() {
+    var d = diff();
+    speedMult = Math.min(speedMult + 0.09, d.max / d.base);
+    var spd = Math.hypot(ball.vx, ball.vy);
+    var maxSpd = d.base * speedMult;
+    if (spd > 0) { ball.vx = (ball.vx / spd) * maxSpd; ball.vy = (ball.vy / spd) * maxSpd; }
+  }
+
+  function update() {
+    padPlayer.y = clampPad(mouseY - PAD_H / 2);
+    aiMove();
+    ball.x += ball.vx; ball.y += ball.vy;
+
+    if (ball.y - BALL_R < 0) { ball.y = BALL_R; ball.vy = Math.abs(ball.vy); clampAngle(); }
+    if (ball.y + BALL_R > H) { ball.y = H - BALL_R; ball.vy = -Math.abs(ball.vy); clampAngle(); }
+
+    var pLeft = PAD_W + 10;
+    if (ball.vx < 0 && ball.x - BALL_R < pLeft + PAD_W && ball.x - BALL_R > pLeft - 2 &&
+        ball.y + BALL_R > padPlayer.y && ball.y - BALL_R < padPlayer.y + PAD_H) {
+      ball.x = pLeft + PAD_W + BALL_R;
+      ball.vx = Math.abs(ball.vx);
+      ball.vy = ((ball.y - (padPlayer.y + PAD_H / 2)) / (PAD_H / 2)) * diff().base * 2.2 * speedMult;
+      boostSpeed();
+      clampAngle();
+    }
+
+    var pRight = W - PAD_W - 10;
+    if (ball.vx > 0 && ball.x + BALL_R > pRight - PAD_W && ball.x + BALL_R < pRight + 2 &&
+        ball.y + BALL_R > padPC.y && ball.y - BALL_R < padPC.y + PAD_H) {
+      ball.x = pRight - PAD_W - BALL_R;
+      ball.vx = -Math.abs(ball.vx);
+      ball.vy = ((ball.y - (padPC.y + PAD_H / 2)) / (PAD_H / 2)) * diff().base * 2.2 * speedMult;
+      boostSpeed();
+      clampAngle();
+    }
+
+    if (ball.x + BALL_R < 0) {
+      scorePC++; scoreAI.textContent = scorePC;
+      if (checkWin()) return;
+      speedMult = 1; resetBall(1);
+    }
+    if (ball.x - BALL_R > W) {
+      scorePlayer++; scoreP.textContent = scorePlayer;
+      if (checkWin()) return;
+      speedMult = 1; resetBall(-1);
+    }
+  }
+
+  // Garante que a bola nunca fique com angulo muito vertical
+  // Minimo de 30 graus em relacao ao eixo horizontal (tan 30 = 0.577)
+  function clampAngle() {
+    var minRatio = 0.55;
+    var spd = Math.hypot(ball.vx, ball.vy);
+    if (spd === 0) return;
+    var absVx = Math.abs(ball.vx);
+    var absVy = Math.abs(ball.vy);
+    // Se componente vertical for mais de ~72% da velocidade total, corrige
+    if (absVx < spd * minRatio) {
+      ball.vx = (ball.vx < 0 ? -1 : 1) * spd * minRatio;
+      ball.vy = (ball.vy < 0 ? -1 : 1) * Math.sqrt(spd * spd - ball.vx * ball.vx);
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = '#0a0a0f';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.setLineDash([10, 12]);
+    ctx.strokeStyle = '#191926';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (padPlayer) {
+      ctx.fillStyle = '#4488ff';
+      rr(PAD_W + 10, padPlayer.y, PAD_W, PAD_H, 3);
+    }
+
+    if (padPC) {
+      ctx.fillStyle = '#ff6644';
+      rr(W - PAD_W - 10 - PAD_W, padPC.y, PAD_W, PAD_H, 3);
+    }
+
+    if (ball) {
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R + 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath(); ctx.fill();
+  }
+
+  function loop() {
+    if (state !== 'playing') return;
+    update(); draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  resize();
+  showStartOverlay();
+  draw();
+})();
+</script>
+</body>
+</html>
