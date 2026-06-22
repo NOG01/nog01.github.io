@@ -1,473 +1,550 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ping Pong</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
-    width: 100%; height: 100%;
-    background: #0a0a0f;
-    overflow: hidden;
-    font-family: 'Share Tech Mono', monospace;
-  }
-  #root {
-    width: 100vw; height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: #0a0a0f;
-  }
-  #topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    max-width: 900px;
-    padding: 0 4px;
-    margin-bottom: 14px;
-  }
-  #scoreboard {
-    display: flex;
-    align-items: center;
-    gap: 40px;
-    color: #e0e0e0;
-    letter-spacing: 2px;
-    flex: 1;
-    justify-content: center;
-  }
-  .name { color: #666; font-size: 12px; text-align: center; }
-  .score { font-size: 42px; color: #fff; line-height: 1; text-align: center; }
-  .sep { color: #333; font-size: 32px; }
-  #pause-btn {
-    background: none;
-    border: 1px solid #444;
-    color: #888;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
-    padding: 6px 14px;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: border-color 0.15s, color 0.15s;
-    white-space: nowrap;
-  }
-  #pause-btn:hover { border-color: #7af; color: #7af; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Felipe Nogueira — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
 
-  #canvas-wrap { position: relative; }
-  canvas { display: block; border-radius: 4px; border: 1px solid #1a1a2a; }
-  #overlay {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.88);
-    border-radius: 4px;
-    color: #fff; gap: 16px;
-  }
-  #overlay h2 { font-size: 22px; letter-spacing: 4px; color: #7af; }
-  .msg { font-size: 13px; color: #888; letter-spacing: 1px; }
-  .winner { font-size: 17px; color: #ffd080; letter-spacing: 2px; }
-  .obtn {
-    background: none; border: 1px solid #7af;
-    color: #7af; font-family: 'Share Tech Mono', monospace;
-    font-size: 13px; letter-spacing: 2px;
-    padding: 9px 28px; cursor: pointer; border-radius: 2px;
-    transition: background 0.15s;
-  }
-  .obtn:hover { background: rgba(119,170,255,0.12); }
-  .hint { font-size: 11px; color: #444; letter-spacing: 1px; }
-  .diff-panel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    border: 1px solid #222;
-    border-radius: 4px;
-    padding: 16px 28px;
-  }
-  .diff-label { font-size: 11px; color: #555; letter-spacing: 2px; }
-  .diff-buttons { display: flex; gap: 10px; }
-  .diff-opt {
-    background: none;
-    border: 1px solid #333;
-    color: #666;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    letter-spacing: 1px;
-    padding: 6px 16px;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: all 0.15s;
-  }
-  .diff-opt:hover { border-color: #7af; color: #7af; }
-  .diff-opt.active { color: #0a0a0f; }
-  .diff-hint { font-size: 11px; color: #444; letter-spacing: 1px; }
-</style>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #09090F;
+      --surface:  #111119;
+      --border:   #1C1C2E;
+      --txt:      #E2E2EE;
+      --muted:    #5A5A78;
+      --accent:   #3DFFC0;
+      --accent-dim: rgba(61,255,192,.08);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--txt);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── LAYOUT ── */
+    .wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(9,9,15,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .wrap {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 52px;
+    }
+    .nav-logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--accent);
+      letter-spacing: .06em;
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .08em;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--txt); }
+
+    /* ── HERO ── */
+    #hero {
+      padding: 152px 0 96px;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: .14em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .hero-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 500;
+      color: var(--txt);
+      line-height: 1.15;
+      letter-spacing: -.01em;
+    }
+    .cursor {
+      display: inline-block;
+      width: 3px;
+      height: .85em;
+      background: var(--accent);
+      margin-left: 4px;
+      vertical-align: text-bottom;
+      animation: blink 1.1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .hero-role {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 10px;
+      letter-spacing: .04em;
+    }
+    .hero-bio {
+      max-width: 520px;
+      margin-top: 28px;
+      color: #9090AA;
+      font-weight: 300;
+      font-size: 14.5px;
+    }
+    .hero-links {
+      display: flex;
+      gap: 14px;
+      margin-top: 36px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .06em;
+      text-decoration: none;
+      transition: all .2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #09090F;
+      font-weight: 600;
+    }
+    .btn-primary:hover { background: #5fffd0; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--muted); color: var(--txt); }
+
+    /* ── SECTION HEADERS ── */
+    .section { padding: 72px 0; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: .14em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .section-label span { color: var(--accent); margin-right: 4px; }
+
+    /* ── SKILLS ── */
+    .skills-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .skill-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--txt);
+      transition: border-color .2s, background .2s;
+    }
+    .skill-chip:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .skill-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* ── PROJECTS ── */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .project-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 22px 22px 18px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color .2s, background .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .project-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .project-card:hover {
+      border-color: #2a2a3e;
+      background: #12121e;
+    }
+    .project-card:hover::before { opacity: 1; }
+
+    .project-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .project-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--txt);
+    }
+    .project-arrow {
+      color: var(--muted);
+      font-size: 14px;
+      flex-shrink: 0;
+      transition: color .2s, transform .2s;
+    }
+    .project-card:hover .project-arrow { color: var(--accent); transform: translate(2px,-2px); }
+
+    .project-desc {
+      font-size: 12.5px;
+      color: var(--muted);
+      font-weight: 300;
+      line-height: 1.6;
+      flex: 1;
+    }
+    .project-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: .06em;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid rgba(61,255,192,.15);
+      border-radius: 3px;
+      padding: 2px 7px;
+    }
+
+    /* ── ABOUT ── */
+    .about-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+    .about-text p { color: #9090AA; font-weight: 300; font-size: 14px; margin-bottom: 14px; }
+    .about-text p:last-child { margin-bottom: 0; }
+    .about-details { display: flex; flex-direction: column; gap: 14px; }
+    .about-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    .about-item-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: .1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .about-item-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--txt);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 40px 0;
+      text-align: center;
+    }
+    footer p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .06em;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .projects-grid { grid-template-columns: 1fr; }
+      .about-row { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      #hero { padding-top: 110px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .cursor { animation: none; }
+    }
+  </style>
 </head>
 <body>
-<div id="root">
-  <div id="topbar">
-    <div style="width:90px"></div>
-    <div id="scoreboard">
-      <div><div class="name">VOCÊ</div><div class="score" id="score-p">0</div></div>
-      <div class="sep">:</div>
-      <div><div class="name">PC</div><div class="score" id="score-ai">0</div></div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="wrap">
+      <a class="nav-logo" href="#">NOG01</a>
+      <ul class="nav-links">
+        <li><a href="#projects">projects</a></li>
+        <li><a href="#skills">skills</a></li>
+        <li><a href="#about">about</a></li>
+      </ul>
     </div>
-    <button id="pause-btn">⚙ CONFIG</button>
-  </div>
-  <div id="canvas-wrap">
-    <canvas id="c"></canvas>
-    <div id="overlay" style="display:none"></div>
-  </div>
-</div>
+  </nav>
 
-<script>
-(function(){
-  var canvas = document.getElementById('c');
-  var ctx = canvas.getContext('2d');
-  var overlay = document.getElementById('overlay');
-  var scoreP = document.getElementById('score-p');
-  var scoreAI = document.getElementById('score-ai');
-  var pauseBtn = document.getElementById('pause-btn');
+  <!-- HERO -->
+  <section id="hero">
+    <div class="wrap">
+      <p class="hero-eyebrow">// portfolio</p>
+      <h1 class="hero-name">Felipe Nogueira<span class="cursor"></span></h1>
+      <p class="hero-role">Software Engineer</p>
+      <p class="hero-bio">
+        Building software that bridges hardware and data — from embedded C++ firmware and IoT pipelines
+        to Python analysis tools and web interfaces. I enjoy turning real-world sensors into
+        meaningful insights.
+      </p>
+      <div class="hero-links">
+        <a class="btn btn-primary" href="https://github.com/NOG01" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+        <a class="btn btn-ghost" href="https://www.linkedin.com/in/felipenas/" target="_blank" rel="noopener">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          LinkedIn
+        </a>
+      </div>
+    </div>
+  </section>
 
-  var PAD_W = 12, BALL_R = 8;
-  var WIN_SCORE = 12;
-  var WIN_DIFF = 3;
+  <!-- PROJECTS -->
+  <section id="projects" class="section">
+    <div class="wrap">
+      <div class="section-label"><span>#</span> pinned projects</div>
+      <div class="projects-grid">
 
-  var DIFFICULTIES = [
-    { name: 'FACIL',   color: '#44cc88', base: 9,   max: 18, aiBase: 0.09,  aiMult: 0.035 },
-    { name: 'MEDIO',   color: '#7af',    base: 13,  max: 24, aiBase: 0.13,  aiMult: 0.05  },
-    { name: 'DIFICIL', color: '#ff6644', base: 19,  max: 34, aiBase: 0.18,  aiMult: 0.07  }
-  ];
-  var diffIndex = 1;
+        <a class="project-card" href="https://github.com/NOG01/truck-shock-durability-bench" target="_blank" rel="noopener">
+          <div class="project-header">
+            <span class="project-name">truck-shock-durability-bench</span>
+            <span class="project-arrow">↗</span>
+          </div>
+          <p class="project-desc">Low-cost durability test bench for truck shock absorbers. Combines Arduino sensor data acquisition with Python-based FFT vibration analysis and a Streamlit dashboard.</p>
+          <div class="project-tags">
+            <span class="tag">Python</span>
+            <span class="tag">Arduino</span>
+            <span class="tag">C++</span>
+            <span class="tag">IoT</span>
+            <span class="tag">Data Analysis</span>
+          </div>
+        </a>
 
-  var W, H, PAD_H;
-  var state = 'idle';
-  var scorePlayer = 0, scorePC = 0;
-  var mouseY;
-  var ball, padPlayer, padPC, speedMult;
-  var raf;
+        <a class="project-card" href="https://github.com/NOG01/ESP32" target="_blank" rel="noopener">
+          <div class="project-header">
+            <span class="project-name">ESP32 — Real-time Monitor</span>
+            <span class="project-arrow">↗</span>
+          </div>
+          <p class="project-desc">Real-time monitoring system with ESP32 C++ firmware and a Python backend. Collects temperature and vibration readings transmitted over MQTT to a PostgreSQL database.</p>
+          <div class="project-tags">
+            <span class="tag">C++</span>
+            <span class="tag">Python</span>
+            <span class="tag">MQTT</span>
+            <span class="tag">PostgreSQL</span>
+            <span class="tag">IoT</span>
+          </div>
+        </a>
 
-  function diff() { return DIFFICULTIES[diffIndex]; }
+        <a class="project-card" href="https://github.com/NOG01/customer-database" target="_blank" rel="noopener">
+          <div class="project-header">
+            <span class="project-name">customer-database</span>
+            <span class="project-arrow">↗</span>
+          </div>
+          <p class="project-desc">A fully featured customer database application written in Python. Supports CRUD operations and demonstrates relational data modeling and SQL query design.</p>
+          <div class="project-tags">
+            <span class="tag">Python</span>
+            <span class="tag">SQL</span>
+            <span class="tag">Database</span>
+          </div>
+        </a>
 
-  function resize() {
-    var avW = window.innerWidth;
-    var avH = window.innerHeight;
-    var topH = 80;
-    var maxW = Math.min(avW - 32, 900);
-    var maxH = avH - topH - 20;
-    var aspect = 16 / 10;
-    var cw = maxW, ch = cw / aspect;
-    if (ch > maxH) { ch = maxH; cw = ch * aspect; }
-    W = Math.floor(cw); H = Math.floor(ch);
-    PAD_H = Math.round(H * 0.18);
-    canvas.width = W; canvas.height = H;
-    if (mouseY === undefined) mouseY = H / 2;
-  }
+        <a class="project-card" href="https://github.com/NOG01/pong-game" target="_blank" rel="noopener">
+          <div class="project-header">
+            <span class="project-name">pong-game</span>
+            <span class="project-arrow">↗</span>
+          </div>
+          <p class="project-desc">Classic Pong implemented in Python, demonstrating game loop architecture, collision detection, and real-time input handling using the Pygame library.</p>
+          <div class="project-tags">
+            <span class="tag">Python</span>
+            <span class="tag">Pygame</span>
+            <span class="tag">Game Dev</span>
+          </div>
+        </a>
 
-  function resetBall(dir) {
-    var d = diff();
-    var angle = Math.random() * 0.6 - 0.3;
-    var speed = d.base * speedMult;
-    var dx = dir || (Math.random() > 0.5 ? 1 : -1);
-    ball = {
-      x: W / 2, y: H / 2,
-      vx: Math.cos(angle) * speed * dx,
-      vy: Math.sin(angle) * speed
-    };
-    if (Math.abs(ball.vx) < 2) ball.vx = 2 * dx;
-  }
+        <a class="project-card" href="https://github.com/NOG01/calculator" target="_blank" rel="noopener">
+          <div class="project-header">
+            <span class="project-name">calculator</span>
+            <span class="project-arrow">↗</span>
+          </div>
+          <p class="project-desc">A clean, functional calculator built with HTML, CSS, and vanilla JavaScript — responsive layout, keyboard support, and a minimal dark UI.</p>
+          <div class="project-tags">
+            <span class="tag">HTML</span>
+            <span class="tag">CSS</span>
+            <span class="tag">JavaScript</span>
+          </div>
+        </a>
 
-  function checkWin() {
-    var gap = Math.abs(scorePlayer - scorePC);
-    var pWin = scorePlayer >= WIN_SCORE || (scorePlayer >= 1 && scorePlayer > scorePC && gap >= WIN_DIFF);
-    var aiWin = scorePC >= WIN_SCORE || (scorePC >= 1 && scorePC > scorePlayer && gap >= WIN_DIFF);
-    if (pWin) { state = 'over'; showGameOver('VOCE VENCEU!', 'PARABENS!', 'JOGAR DE NOVO'); return true; }
-    if (aiWin) { state = 'over'; showGameOver('PC VENCEU', 'TENTE NOVAMENTE', 'REVANCHE'); return true; }
-    return false;
-  }
+        <a class="project-card" href="https://github.com/NOG01/triangle" target="_blank" rel="noopener">
+          <div class="project-header">
+            <span class="project-name">triangle</span>
+            <span class="project-arrow">↗</span>
+          </div>
+          <p class="project-desc">A JavaScript geometry utility that computes triangle properties — area, perimeter, and angle classification — with clean DOM interaction and input validation.</p>
+          <div class="project-tags">
+            <span class="tag">JavaScript</span>
+            <span class="tag">HTML</span>
+            <span class="tag">Geometry</span>
+          </div>
+        </a>
 
-  function startGame() {
-    scorePlayer = 0; scorePC = 0;
-    scoreP.textContent = 0; scoreAI.textContent = 0;
-    speedMult = 1;
-    padPlayer = { y: H / 2 - PAD_H / 2 };
-    padPC    = { y: H / 2 - PAD_H / 2 };
-    overlay.style.display = 'none';
-    pauseBtn.textContent = '❙❙ PAUSA';
-    resetBall(1);
-    state = 'playing';
-    if (raf) cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(loop);
-  }
+      </div>
+    </div>
+  </section>
 
-  var lastGameOverArgs = null;
+  <!-- SKILLS -->
+  <section id="skills" class="section">
+    <div class="wrap">
+      <div class="section-label"><span>#</span> technologies</div>
+      <div class="skills-grid">
+        <div class="skill-chip"><span class="skill-dot"></span>Python</div>
+        <div class="skill-chip"><span class="skill-dot"></span>C++</div>
+        <div class="skill-chip"><span class="skill-dot"></span>JavaScript</div>
+        <div class="skill-chip"><span class="skill-dot"></span>HTML / CSS</div>
+        <div class="skill-chip"><span class="skill-dot"></span>SQL</div>
+        <div class="skill-chip"><span class="skill-dot"></span>Arduino</div>
+        <div class="skill-chip"><span class="skill-dot"></span>ESP32</div>
+        <div class="skill-chip"><span class="skill-dot"></span>MQTT</div>
+        <div class="skill-chip"><span class="skill-dot"></span>Streamlit</div>
+        <div class="skill-chip"><span class="skill-dot"></span>PostgreSQL</div>
+        <div class="skill-chip"><span class="skill-dot"></span>FFT / Signal Processing</div>
+        <div class="skill-chip"><span class="skill-dot"></span>Embedded Systems</div>
+      </div>
+    </div>
+  </section>
 
-  function showStartOverlay() {
-    overlay.innerHTML = '';
-    var h = document.createElement('h2'); h.textContent = 'PING PONG'; overlay.appendChild(h);
-    var m = document.createElement('div'); m.className = 'msg'; m.textContent = 'PRIMEIRO A 12 PONTOS OU VANTAGEM DE 3 VENCE'; overlay.appendChild(m);
-    var b = document.createElement('button'); b.className = 'obtn'; b.id = 'start-btn'; b.textContent = 'JOGAR'; b.onclick = startGame; overlay.appendChild(b);
-    var hint = document.createElement('div'); hint.className = 'hint'; hint.textContent = 'mova o mouse sobre o campo para controlar'; overlay.appendChild(hint);
-    overlay.style.display = 'flex';
-  }
+  <!-- ABOUT -->
+  <section id="about" class="section">
+    <div class="wrap">
+      <div class="section-label"><span>#</span> about</div>
+      <div class="about-row">
+        <div class="about-text">
+          <p>
+            I'm Felipe Nogueira, a software engineer with a passion for building systems that sit at the
+            intersection of hardware and software. My projects range from low-level embedded firmware
+            in C++ to data analysis pipelines and browser-based interfaces.
+          </p>
+          <p>
+            I enjoy solving engineering problems end-to-end — writing the firmware, designing the data
+            schema, and building the dashboard that makes the results meaningful.
+          </p>
+          <p>
+            Currently open to new opportunities and collaborations. Feel free to reach out through
+            GitHub or LinkedIn.
+          </p>
+        </div>
+        <div class="about-details">
+          <div class="about-item">
+            <span class="about-item-label">Location</span>
+            <span class="about-item-val">Brazil 🇧🇷</span>
+          </div>
+          <div class="about-item">
+            <span class="about-item-label">Focus</span>
+            <span class="about-item-val">Embedded Systems &amp; Data</span>
+          </div>
+          <div class="about-item">
+            <span class="about-item-label">GitHub</span>
+            <span class="about-item-val"><a style="color:var(--accent);text-decoration:none" href="https://github.com/NOG01" target="_blank">github.com/NOG01</a></span>
+          </div>
+          <div class="about-item">
+            <span class="about-item-label">LinkedIn</span>
+            <span class="about-item-val"><a style="color:var(--accent);text-decoration:none" href="https://www.linkedin.com/in/felipenas/" target="_blank">in/felipenas</a></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  function showGameOver(title, sub, btnText) {
-    lastGameOverArgs = [title, sub, btnText];
-    pauseBtn.textContent = '⚙ CONFIG';
-    overlay.innerHTML = '';
-    var w = document.createElement('div'); w.className = 'winner'; w.textContent = title; overlay.appendChild(w);
-    var s = document.createElement('div'); s.className = 'msg'; s.textContent = sub; overlay.appendChild(s);
-    var b = document.createElement('button'); b.className = 'obtn'; b.textContent = btnText; b.onclick = startGame; overlay.appendChild(b);
-    overlay.style.display = 'flex';
-  }
+  <!-- FOOTER -->
+  <footer>
+    <div class="wrap">
+      <p>Felipe Nogueira · <a href="https://github.com/NOG01" target="_blank">NOG01</a> · Built for <a href="https://nog01.github.io/" target="_blank">nog01.github.io</a></p>
+    </div>
+  </footer>
 
-  function buildDiffPanel(onClose, closeLabel) {
-    overlay.innerHTML = '';
-
-    var title = document.createElement('div');
-    title.style.cssText = 'font-size:18px;letter-spacing:4px;color:#7af;';
-    title.textContent = state === 'paused' ? 'PAUSADO' : 'CONFIGURACOES';
-    overlay.appendChild(title);
-
-    var panel = document.createElement('div');
-    panel.className = 'diff-panel';
-
-    var lbl = document.createElement('div'); lbl.className = 'diff-label'; lbl.textContent = 'DIFICULDADE';
-    panel.appendChild(lbl);
-
-    var btns = document.createElement('div'); btns.className = 'diff-buttons';
-
-    DIFFICULTIES.forEach(function(d, i) {
-      var btn = document.createElement('button');
-      btn.className = 'diff-opt' + (i === diffIndex ? ' active' : '');
-      btn.textContent = d.name;
-      btn.style.borderColor = d.color;
-      if (i === diffIndex) { btn.style.background = d.color; btn.style.color = '#0a0a0f'; }
-      else { btn.style.color = d.color; }
-      btn.onclick = function() {
-        diffIndex = i;
-        btns.querySelectorAll('.diff-opt').forEach(function(b, j) {
-          var dj = DIFFICULTIES[j];
-          if (j === i) {
-            b.className = 'diff-opt active';
-            b.style.background = dj.color;
-            b.style.color = '#0a0a0f';
-          } else {
-            b.className = 'diff-opt';
-            b.style.background = 'none';
-            b.style.color = dj.color;
-          }
-          b.style.borderColor = dj.color;
-        });
-      };
-      btns.appendChild(btn);
-    });
-
-    panel.appendChild(btns);
-
-    var hint = document.createElement('div'); hint.className = 'diff-hint';
-    hint.textContent = 'altera a velocidade da bola e da IA';
-    panel.appendChild(hint);
-    overlay.appendChild(panel);
-
-    var closeBtn = document.createElement('button');
-    closeBtn.className = 'obtn';
-    closeBtn.textContent = closeLabel;
-    closeBtn.onclick = onClose;
-    overlay.appendChild(closeBtn);
-
-    overlay.style.display = 'flex';
-  }
-
-  function showPauseOverlay() {
-    buildDiffPanel(resumeGame, '\u25B6 CONTINUAR');
-  }
-
-  function showConfigOverlay() {
-    var restoreFn;
-    if (state === 'idle') {
-      restoreFn = showStartOverlay;
-    } else if (state === 'over') {
-      restoreFn = function() {
-        if (lastGameOverArgs) showGameOver(lastGameOverArgs[0], lastGameOverArgs[1], lastGameOverArgs[2]);
-      };
-    } else {
-      restoreFn = function() { overlay.style.display = 'none'; };
-    }
-    buildDiffPanel(function() {
-      overlay.innerHTML = '';
-      restoreFn();
-    }, '\u2190 VOLTAR');
-  }
-
-  function pauseGame() {
-    if (state !== 'playing') return;
-    state = 'paused';
-    if (raf) { cancelAnimationFrame(raf); raf = null; }
-    pauseBtn.textContent = '\u25B6 CONTINUAR';
-    showPauseOverlay();
-  }
-
-  function resumeGame() {
-    if (state !== 'paused') return;
-    state = 'playing';
-    overlay.style.display = 'none';
-    pauseBtn.textContent = '❙❙ PAUSA';
-    raf = requestAnimationFrame(loop);
-  }
-
-  pauseBtn.onclick = function() {
-    if (state === 'playing') pauseGame();
-    else if (state === 'paused') resumeGame();
-    else showConfigOverlay();
-  };
-
-  document.addEventListener('keydown', function(e) {
-    if (e.code === 'Escape' || e.code === 'KeyP') {
-      if (state === 'playing') pauseGame();
-      else if (state === 'paused') resumeGame();
-    }
-  });
-
-  canvas.addEventListener('mousemove', function(e) {
-    var rect = canvas.getBoundingClientRect();
-    mouseY = e.clientY - rect.top;
-  });
-  canvas.addEventListener('touchmove', function(e) {
-    e.preventDefault();
-    var rect = canvas.getBoundingClientRect();
-    mouseY = e.touches[0].clientY - rect.top;
-  }, { passive: false });
-
-  window.addEventListener('resize', function() {
-    resize();
-    if (state !== 'playing') draw();
-  });
-
-  function clampPad(y) { return Math.max(0, Math.min(H - PAD_H, y)); }
-
-  function aiMove() {
-    var d = diff();
-    var center = padPC.y + PAD_H / 2;
-    var delta = ball.y - center;
-    var skill = Math.min(d.aiBase + speedMult * d.aiMult, d.aiBase * 2.2);
-    padPC.y = clampPad(padPC.y + delta * skill * (1 + Math.random() * 0.06));
-  }
-
-  function boostSpeed() {
-    var d = diff();
-    speedMult = Math.min(speedMult + 0.09, d.max / d.base);
-    var spd = Math.hypot(ball.vx, ball.vy);
-    var maxSpd = d.base * speedMult;
-    if (spd > 0) { ball.vx = (ball.vx / spd) * maxSpd; ball.vy = (ball.vy / spd) * maxSpd; }
-  }
-
-  function update() {
-    padPlayer.y = clampPad(mouseY - PAD_H / 2);
-    aiMove();
-    ball.x += ball.vx; ball.y += ball.vy;
-
-    if (ball.y - BALL_R < 0) { ball.y = BALL_R; ball.vy = Math.abs(ball.vy); clampAngle(); }
-    if (ball.y + BALL_R > H) { ball.y = H - BALL_R; ball.vy = -Math.abs(ball.vy); clampAngle(); }
-
-    var pLeft = PAD_W + 10;
-    if (ball.vx < 0 && ball.x - BALL_R < pLeft + PAD_W && ball.x - BALL_R > pLeft - 2 &&
-        ball.y + BALL_R > padPlayer.y && ball.y - BALL_R < padPlayer.y + PAD_H) {
-      ball.x = pLeft + PAD_W + BALL_R;
-      ball.vx = Math.abs(ball.vx);
-      ball.vy = ((ball.y - (padPlayer.y + PAD_H / 2)) / (PAD_H / 2)) * diff().base * 2.2 * speedMult;
-      boostSpeed();
-      clampAngle();
-    }
-
-    var pRight = W - PAD_W - 10;
-    if (ball.vx > 0 && ball.x + BALL_R > pRight - PAD_W && ball.x + BALL_R < pRight + 2 &&
-        ball.y + BALL_R > padPC.y && ball.y - BALL_R < padPC.y + PAD_H) {
-      ball.x = pRight - PAD_W - BALL_R;
-      ball.vx = -Math.abs(ball.vx);
-      ball.vy = ((ball.y - (padPC.y + PAD_H / 2)) / (PAD_H / 2)) * diff().base * 2.2 * speedMult;
-      boostSpeed();
-      clampAngle();
-    }
-
-    if (ball.x + BALL_R < 0) {
-      scorePC++; scoreAI.textContent = scorePC;
-      if (checkWin()) return;
-      speedMult = 1; resetBall(1);
-    }
-    if (ball.x - BALL_R > W) {
-      scorePlayer++; scoreP.textContent = scorePlayer;
-      if (checkWin()) return;
-      speedMult = 1; resetBall(-1);
-    }
-  }
-
-  // Garante que a bola nunca fique com angulo muito vertical
-  // Minimo de 30 graus em relacao ao eixo horizontal (tan 30 = 0.577)
-  function clampAngle() {
-    var minRatio = 0.55;
-    var spd = Math.hypot(ball.vx, ball.vy);
-    if (spd === 0) return;
-    var absVx = Math.abs(ball.vx);
-    var absVy = Math.abs(ball.vy);
-    // Se componente vertical for mais de ~72% da velocidade total, corrige
-    if (absVx < spd * minRatio) {
-      ball.vx = (ball.vx < 0 ? -1 : 1) * spd * minRatio;
-      ball.vy = (ball.vy < 0 ? -1 : 1) * Math.sqrt(spd * spd - ball.vx * ball.vx);
-    }
-  }
-
-  function draw() {
-    ctx.fillStyle = '#0a0a0f';
-    ctx.fillRect(0, 0, W, H);
-
-    ctx.setLineDash([10, 12]);
-    ctx.strokeStyle = '#191926';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
-    ctx.setLineDash([]);
-
-    if (padPlayer) {
-      ctx.fillStyle = '#4488ff';
-      rr(PAD_W + 10, padPlayer.y, PAD_W, PAD_H, 3);
-    }
-
-    if (padPC) {
-      ctx.fillStyle = '#ff6644';
-      rr(W - PAD_W - 10 - PAD_W, padPC.y, PAD_W, PAD_H, 3);
-    }
-
-    if (ball) {
-      ctx.fillStyle = 'rgba(255,255,255,0.06)';
-      ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R + 5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2); ctx.fill();
-    }
-  }
-
-  function rr(x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
-    ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-    ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
-    ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
-    ctx.closePath(); ctx.fill();
-  }
-
-  function loop() {
-    if (state !== 'playing') return;
-    update(); draw();
-    raf = requestAnimationFrame(loop);
-  }
-
-  resize();
-  showStartOverlay();
-  draw();
-})();
-</script>
 </body>
 </html>
